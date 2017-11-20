@@ -32,15 +32,12 @@ import java.util.HashMap;
 import java.util.Random;
 
 /**
- * This is a helper class which implement convenience methods. 
+ * This class implements convenience methods and data structures.
  * @author Ron.Coleman
  */
 public class Helper {
+    // Toggle this for helper-specific debuggins
     public static boolean DEBUGGING = false;
-    
-    public final static char TYPE_DECIMAL = 'D';
-    public final static char TYPE_NOMINAL = 'N';
-    public final static char TYPE_SKIP = '-';
     
     // All the data, decimal and nominal
     public static HashMap<String, ArrayList> data = new HashMap<>();
@@ -126,7 +123,7 @@ public class Helper {
                     
                     switch (types[col]) {
                         // This column is decimal data
-                        case TYPE_DECIMAL:                            
+                        case Constant.TYPE_DECIMAL:                            
                             double d = Double.parseDouble(fields[col]);
 
                             ArrayList colDoubles = data.get(title);
@@ -135,7 +132,7 @@ public class Helper {
                             break;
                             
                         // This column is nominal data
-                        case TYPE_NOMINAL:
+                        case Constant.TYPE_NOMINAL:
                             String s = fields[col];
 
                             ArrayList colNominals = data.get(title);
@@ -144,7 +141,7 @@ public class Helper {
                             break;
                             
                         // Skip this column
-                        case TYPE_SKIP:
+                        case Constant.TYPE_SKIP:
                             break;
                             
                         default:
@@ -198,7 +195,7 @@ public class Helper {
         int index = -1;
 
         for (int k = 0; k < universe.length; k++) {
-            if (universe[k] == Helper.TYPE_NOMINAL) {
+            if (universe[k] == Constant.TYPE_NOMINAL) {
                 index = k;
                 break;
             }

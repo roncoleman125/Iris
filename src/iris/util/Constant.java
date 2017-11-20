@@ -20,26 +20,27 @@
  OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package iris.plugin;
+package iris.util;
 
 /**
- * This interface defines the conical behavior of training and using a neural
- * network.
+ * This class contains most of the constants need for the iris data.
  * @author Ron.Coleman
  */
-public interface IIris {
-    /** Normalizes the data */
-    public void normalizeData();
+public class Constant { 
+    public final static String CLASSIFYING = "iris"; 
     
-    /** Creates the training data */
-    public void createTrainingData();
+    public final static int TRAINING_START = 0;
+    public final static int TRAINING_END = 119;
+    public final static int TESTING_START = TRAINING_END + 1;
+    public final static int TESTING_END = 150;
     
-    /** Creates the neural network */
-    public void createNetwork();
+    public final static int NUM_TRAINING_ROWS = TRAINING_END - TRAINING_START + 1;
     
-    /** Trains the network */
-    public void trainNetwork();
+    public final static double TRAINING_THRESHOLD = 0.01;
     
-    /** Tests the network */
-    public void testNetwork();
+    public final static int NUM_HIDDEN = 4;
+    
+    public final static char TYPE_DECIMAL = 'D';
+    public final static char TYPE_NOMINAL = 'N';
+    public final static char TYPE_SKIP = '-';  
 }

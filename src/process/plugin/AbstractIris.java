@@ -24,10 +24,6 @@ package process.plugin;
 
 import process.util.Constant;
 import static process.util.Constant.CLASSIFYING;
-import static process.util.Constant.NUM_TRAINING_ROWS;
-import static process.util.Constant.TRAINING_END;
-import static process.util.Constant.TRAINING_START;
-import static process.util.Constant.TRAINING_THRESHOLD;
 import process.util.Helper;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,6 +36,8 @@ import org.encog.neural.networks.BasicNetwork;
 import org.encog.neural.networks.training.propagation.resilient.ResilientPropagation;
 import org.encog.util.arrayutil.NormalizationAction;
 import org.encog.util.arrayutil.NormalizedField;
+import static process.util.Constant.TRAIN_FRACTION;
+import static process.util.Constant.TRAIN_THRESHOLD;
 
 /**
  * This class partially implements an neural process for the iris data.
@@ -57,6 +55,14 @@ abstract public class AbstractIris implements INeuralProcess {
         Constant.TYPE_DECIMAL,  // petal width
         Constant.TYPE_NOMINAL,  // iris classification
     };
+    
+    protected int trainStart = -1;
+    protected int trainEnd = -1;
+    protected int numTrainRows = -1;
+    
+    protected int testStart = -1;
+    protected int testEnd = -1;
+    protected int numTestRows = -1;
     
     // Training data set
     protected BasicMLDataSet trainingSet;
@@ -106,11 +112,22 @@ abstract public class AbstractIris implements INeuralProcess {
             // Load the csv file into memory
             Helper.loadCsv(path, columnTypes);
             
+            // Compute the data indexes
+            this.trainStart = 0;
+            this.trainEnd = (int) (Helper.rowCount * TRAIN_FRACTION + 0.5) - 1;
+            this.numTrainRows = this.trainEnd - this.trainStart + 1;
+
+            this.testStart = this.trainEnd + 1;
+            this.testEnd = Helper.rowCount - 1;
+            this.numTestRows = this.testEnd - this.testStart + 1;            
+            
             // Get the number of subtypes of the nominal data
             this.subtypes = Helper.getNominalSubtypes();
         
             // Define the equilateral over [-1, 1].
             this.equilateral = new Equilateral(subtypes.size(), -1, 1); 
+            
+            
             
         } catch (Exception ex) {
             Logger.getLogger(AbstractIris.class.getName()).log(Level.SEVERE, null, ex);
@@ -146,14 +163,14 @@ abstract public class AbstractIris implements INeuralProcess {
      * @return 1D array: normalize encoding in range [-1, 1]
      */    
     protected double[] normalizeInputs(String header) {
-        double[] denormalized = new double[NUM_TRAINING_ROWS];
+        double[] denormalized = new double[numTrainRows];
 
         ArrayList decimals = Helper.data.get(header);
 
         double max = Double.MIN_VALUE;
         double min = Double.MAX_EXPONENT;
         
-        for (int index=TRAINING_START; index < TRAINING_END; index++) {
+        for (int index=trainStart; index < trainEnd; index++) {
             double decimal = (Double) decimals.get(index);
             
             denormalized[index] = decimal;
@@ -165,11 +182,14 @@ abstract public class AbstractIris implements INeuralProcess {
                 min = decimal;
         } 
         
-        // Save the range data we need later when testing the network
-        hilos.put(header, (ArrayList<Double>) Arrays.asList(max, min));
+        // Save range data we need later when normalizing test data
+        ArrayList<Double> maxmins = new ArrayList<>();
+        maxmins.add(max);
+        maxmins.add(min);
+        hilos.put(header, maxmins);
 
         // This buffer holds the normalized data
-        double[] normalized = new double[NUM_TRAINING_ROWS];
+        double[] normalized = new double[numTrainRows];
         
         // Use normalization object where we can specify the denormalized
         // high and low and the normalized high and low.
@@ -189,7 +209,7 @@ abstract public class AbstractIris implements INeuralProcess {
      * @return 2D array: [A][B] where A=all rows, B=n-1 dimension array
      */
     protected double[][] normalizeIdeals(String header) { 
-        double[][] denormalized = new double[NUM_TRAINING_ROWS][];
+        double[][] denormalized = new double[numTrainRows][];
 
         // This is the entire column of nominal data
         ArrayList nominals = Helper.data.get(header);
@@ -198,7 +218,7 @@ abstract public class AbstractIris implements INeuralProcess {
         subtypes = Helper.getNominalSubtypes();
                
         // Get the encodings for the subtype
-        for(int i=TRAINING_START; i < TRAINING_END; i++) {
+        for(int i=trainStart; i < trainEnd; i++) {
             // Translate the subtype to an number for the equilateral coding
             String nominal = (String) nominals.get(i);
             
@@ -252,7 +272,7 @@ abstract public class AbstractIris implements INeuralProcess {
             System.out.println("Epoch #" + epoch + " Error:" + train.getError());
             
             epoch++;
-        } while (train.getError() > TRAINING_THRESHOLD);
+        } while (train.getError() > TRAIN_THRESHOLD);
         
         train.finishTraining();        
     }

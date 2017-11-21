@@ -155,7 +155,7 @@ public class Helper {
     
     /**
      * Gets the subtypes for
-     * @return 
+     * @return Subtypes in the nominal ontology
      */
     public static ArrayList<String> getNominalSubtypes() {
         if(oneofn.isEmpty())

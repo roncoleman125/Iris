@@ -20,11 +20,11 @@
  OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package iris;
+package process;
 
-import iris.plugin.IIris;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import process.plugin.INeuralProcess;
 
 
 /**
@@ -36,38 +36,39 @@ public class Main {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        IIris iris = loadIris();
+        // Load the processor
+        INeuralProcess process = loadProcess();
         
-        iris.normalizeData();
+        process.normalizeData();
         
-        iris.createTrainingData();
+        process.createTrainingData();
         
-        iris.createNetwork();
+        process.createNetwork();
         
-        iris.trainNetwork();
+        process.trainNetwork();
         
-        iris.testNetwork();
+        process.testNetwork();
     }
 
     /**
-     * Loads the iris plugin.
-     * @return Iris plugin
+     * Loads the process plug-in.
+     * @return Process plug-in
      */
-    private static IIris loadIris() {
+    private static INeuralProcess loadProcess() {
         // Check the properties for the iris plugin
-        String className = System.getProperty("iris.plugin");
+        String className = System.getProperty("process.plugin");
 
         // If there is no iris in the properties, use the default iris
         if (className == null) {
             className = "iris.plugin.DefaultIris";
         }
 
-        Class<IIris> clazz;
+        Class<INeuralProcess> clazz;
 
         try {
-            clazz = (Class<IIris>) Class.forName(className);
+            clazz = (Class<INeuralProcess>) Class.forName(className);
 
-            IIris iris = clazz.newInstance();
+            INeuralProcess iris = clazz.newInstance();
 
             return iris;
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException ex) {

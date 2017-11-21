@@ -20,15 +20,15 @@
  OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package iris.plugin;
+package process.plugin;
 
-import iris.util.Constant;
-import static iris.util.Constant.CLASSIFYING;
-import static iris.util.Constant.NUM_TRAINING_ROWS;
-import static iris.util.Constant.TRAINING_END;
-import static iris.util.Constant.TRAINING_START;
-import static iris.util.Constant.TRAINING_THRESHOLD;
-import iris.util.Helper;
+import process.util.Constant;
+import static process.util.Constant.CLASSIFYING;
+import static process.util.Constant.NUM_TRAINING_ROWS;
+import static process.util.Constant.TRAINING_END;
+import static process.util.Constant.TRAINING_START;
+import static process.util.Constant.TRAINING_THRESHOLD;
+import process.util.Helper;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -42,39 +42,47 @@ import org.encog.util.arrayutil.NormalizationAction;
 import org.encog.util.arrayutil.NormalizedField;
 
 /**
- * This class runs the Iris ANN.
+ * This class partially implements an neural process for the iris data.
  * @author Ron Coleman
  */
-abstract public class AbstractIris implements IIris {
+abstract public class AbstractIris implements INeuralProcess {
+    // Controls certain debugging operations
     public static boolean DEBUGGING = false;
 
+    // Defines the column data types in iris.csv
     public final static char[] DATA_TYPES = {
-        Constant.TYPE_DECIMAL,
-        Constant.TYPE_DECIMAL,
-        Constant.TYPE_DECIMAL,
-        Constant.TYPE_DECIMAL,
-        Constant.TYPE_NOMINAL,
+        Constant.TYPE_DECIMAL,  // sepal length
+        Constant.TYPE_DECIMAL,  // sepal width
+        Constant.TYPE_DECIMAL,  // petal length
+        Constant.TYPE_DECIMAL,  // petal width
+        Constant.TYPE_NOMINAL,  // iris classification
     };
     
+    // Training data set
     protected BasicMLDataSet trainingSet;
+    
+    // Neural network
     protected BasicNetwork network;
  
-    
+    // Using equilateral (as opposed to one-of-n) encoding
     protected Equilateral equilateral = null;
     
+    // Nominal subtupes: setosa, versicolor, and virginica
     protected ArrayList<String> subtypes = null;
     
-    // For the iris data inputs[0] is "sepal length" col, inputs[1] is
-    // "sepal width" col, etc.
+    // For iris.csv inputs[0] is the "sepal length" col, inputs[1] is
+    // the "sepal width" col, etc.
     protected double [][] inputs = null;
     
-    // For iris data ideals[0]-inputs[50] contains the equilateral encodings for "setosa",
+    // For iris.csv ideals[0]-inputs[50] contains the equilateral encodings for "setosa",
     // ideals[51]-ideals[100] contains the equilateral encodings for "versicolor", and
     // ideals[101]-ideals[149] contains the equilateral encodings for "virginica".
+    // NOTE: after iris.csv is loaded, the rows are randomized so the above sequences
+    // are valid.
     protected double [][] ideals = null;
     
     // This contains the highs and lows for the respective column with string name.
-    // The hi is at index 0, and the low at index 1.
+    // The high is at index 0, and the low at index 1.
     protected HashMap<String,ArrayList<Double>> hilos = new HashMap<>();
     
     /**
@@ -91,7 +99,7 @@ abstract public class AbstractIris implements IIris {
      * @param classifying Header column name
      * @param path File path of the CSV data
      * @param columnTypes Column types
-     * @see iris.util.Constant
+     * @see process.util.Constant
      */
     protected AbstractIris(String classifying, String path, char[] columnTypes) {
         try {

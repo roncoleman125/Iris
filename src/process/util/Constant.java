@@ -20,25 +20,35 @@
  OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package iris.util;
+package process.util;
 
 /**
- * This class contains most of the constants need for the iris data.
+ * This class contains most of the constants needed for the iris data.
  * @author Ron.Coleman
  */
 public class Constant { 
+    //// THESE DATA MAY NEED TO CHANGE FOR DIFFERENT DATA SETS ////
+    
+    // Header column title in iris.csv we're classifying
     public final static String CLASSIFYING = "iris"; 
     
+    // Training data set indexes in iris.csv
     public final static int TRAINING_START = 0;
     public final static int TRAINING_END = 119;
-    public final static int TESTING_START = TRAINING_END + 1;
-    public final static int TESTING_END = 150;
-    
     public final static int NUM_TRAINING_ROWS = TRAINING_END - TRAINING_START + 1;
     
-    public final static double TRAINING_THRESHOLD = 0.01;
+    // Test data set indexes in iris.csv
+    public final static int TEST_START = TRAINING_END + 1;
+    public final static int TEST_END = 150;
+    public final static int NUM_TEST_ROWS = TRAINING_END - TRAINING_START + 1;
     
+    // Number of neurons in the (one) hidden layer
     public final static int NUM_HIDDEN = 4;
+
+    //// THESE DATA PROBABLY WONT CHANGE FOR DIFFERENT DATA SETS ////  
+    
+    // Training error threshold
+    public final static double TRAINING_THRESHOLD = 0.01;
     
     public final static char TYPE_DECIMAL = 'D';
     public final static char TYPE_NOMINAL = 'N';

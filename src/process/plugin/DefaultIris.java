@@ -20,26 +20,30 @@
  OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package iris.plugin;
+package process.plugin;
 
 /**
- * This interface defines the conical behavior of training and using a neural
- * network.
+ *
  * @author Ron.Coleman
  */
-public interface IIris {
-    /** Normalizes the data */
-    public void normalizeData();
+public class DefaultIris extends AbstractIris {
+
+    public DefaultIris() {
+        this("iris","iris.csv");
+    }
     
-    /** Creates the training data */
-    public void createTrainingData();
+    public DefaultIris(String classifying, String path) {
+        super(classifying, path);
+    }
+
+    @Override
+    public void createNetwork() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void testNetwork() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
     
-    /** Creates the neural network */
-    public void createNetwork();
-    
-    /** Trains the network */
-    public void trainNetwork();
-    
-    /** Tests the network */
-    public void testNetwork();
 }

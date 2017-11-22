@@ -37,10 +37,10 @@ import java.util.Random;
  */
 public class Helper {
     // Toggle this for helper-specific debuggins
-    public static boolean DEBUGGING = false;
+    public static boolean DEBUGGING = true;
     
     // All the data, decimal and nominal
-    public static HashMap<String, ArrayList> data = new HashMap<>();
+    public static HashMap<String, ArrayList> rawData = new HashMap<>();
     
     // All the respective hearders
     public static ArrayList<String> headers = new ArrayList<>();
@@ -79,7 +79,7 @@ public class Helper {
         // Clear the old data
         universe = types;
         
-        data.clear();
+        rawData.clear();
         
         headers.clear();
         
@@ -114,7 +114,7 @@ public class Helper {
 
                     headers.add(title);
 
-                    data.put(title, new ArrayList<>());
+                    rawData.put(title, new ArrayList<>());
                 }
             } else {
                 // Go through each field and convert it according to its type
@@ -126,7 +126,7 @@ public class Helper {
                         case Constant.TYPE_DECIMAL:                            
                             double d = Double.parseDouble(fields[col]);
 
-                            ArrayList colDoubles = data.get(title);
+                            ArrayList colDoubles = rawData.get(title);
 
                             colDoubles.add(d);
                             break;
@@ -135,7 +135,7 @@ public class Helper {
                         case Constant.TYPE_NOMINAL:
                             String s = fields[col];
 
-                            ArrayList colNominals = data.get(title);
+                            ArrayList colNominals = rawData.get(title);
 
                             colNominals.add(s);
                             break;
@@ -210,7 +210,7 @@ public class Helper {
         // Use this title to retrieve the nominal column
         String title = Helper.headers.get(index);
 
-        ArrayList<String> nominals = Helper.data.get(title);
+        ArrayList<String> nominals = Helper.rawData.get(title);
 
         // Count the number of unique nominal values
         HashMap<String, Integer> counter = new HashMap<>();

@@ -74,26 +74,17 @@ abstract public class AbstractIris implements INeuralProcess {
     
     // Nominal subtupes: setosa, versicolor, and virginica
     protected ArrayList<String> subtypes = null;
-    
-    // These are the normalized inputs in row-major format. That is,
-    // the first dimension gives the column. For iris.csv rowMajorInputs[0] is the
-    // sepal length col, rowMajorInputs[1] is the sepal width col, etc.
-    protected double [][] rowMajorInputs = null;
-    
+       
     // These are the normalized inputs in col-major format. That is,
     // the first dimension gives the row. For iris.csv, each row contains an
     // observation together of sepal width, sepal length, petal width, and petal
     // length.
-    protected double[][] inputs = null;
+    protected double[][] allInputs = null;
     
     // These are the normalized ideals in row-oriented form.
     // That is, every row contains an equilateral encoding of the nominal
     // subtype.
-    protected double [][] ideals = null;
-    
-    // This contains the highs and lows for the respective column with string name.
-    // The high is at index 0, and the low at index 1.
-    protected HashMap<String,ArrayList<Double>> hilos = new HashMap<>();
+    protected double [][] allIdeals = null;
     
     /**
      * Constructor
@@ -130,9 +121,6 @@ abstract public class AbstractIris implements INeuralProcess {
         
             // Define the equilateral over [-1, 1].
             this.equilateral = new Equilateral(subtypes.size(), -1, 1); 
-            
-            
-            
         } catch (Exception ex) {
             Logger.getLogger(AbstractIris.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -142,24 +130,36 @@ abstract public class AbstractIris implements INeuralProcess {
      * Normalizes the data into inputs and ideals
      */
     @Override
-    public void normalizeData() {
-        hilos.clear();
-        
+    public void normalizeData() {        
         ArrayList<String> headers = Helper.headers;
         
-        rowMajorInputs = new double[headers.size()-1][];
+        // Normalize the independent variables
+        int numCols = Helper.headers.size() - 1;
         
-        for(int index=0; index < headers.size(); index++) {
+        // This variable hold the preliminary normalized inputs in row-major form
+        double[][] inputs_ = new double[numCols][];
+
+        for(int index=0; index < numCols; index++) {
             String header = headers.get(index);
             
             if(!headers.get(index).equals(CLASSIFYING)) {
                 double[] normalized = normalizeInputs(header);
-                rowMajorInputs[index] = normalized;
-            }
-            else {
-                ideals = normalizeIdeals(header);
+                
+                inputs_[index] = normalized;
             }
         }
+        
+        // Transpose the normalized inputs into column-major form
+        allInputs = new double[Helper.rowCount][numCols];
+        
+        for(int row=0; row < Helper.rowCount; row++) {
+            for(int col=0; col < numCols; col++) {
+                allInputs[row][col] = inputs_[col][row];
+            }
+        }
+        
+        // Normalize the dependent variable which is in column-major form
+        allIdeals = normalizeIdeals(Constant.CLASSIFYING);
     }
     /**
      * Gets the normalized encodings for the column with string name in header.
@@ -167,14 +167,14 @@ abstract public class AbstractIris implements INeuralProcess {
      * @return 1D array: normalize encoding in range [-1, 1]
      */    
     protected double[] normalizeInputs(String header) {
-        double[] denormalized = new double[numTrainRows];
+        double[] denormalized = new double[Helper.rowCount];
 
-        ArrayList decimals = Helper.data.get(header);
+        ArrayList decimals = Helper.rawData.get(header);
 
         double max = Double.MIN_VALUE;
         double min = Double.MAX_EXPONENT;
         
-        for (int index=trainStart; index <= trainEnd; index++) {
+        for (int index=0; index < Helper.rowCount-1; index++) {
             double decimal = (Double) decimals.get(index);
             
             denormalized[index] = decimal;
@@ -185,15 +185,9 @@ abstract public class AbstractIris implements INeuralProcess {
             if(decimal < min)
                 min = decimal;
         } 
-        
-        // Save range data we need later when normalizing test data
-        ArrayList<Double> maxmins = new ArrayList<>();
-        maxmins.add(max);
-        maxmins.add(min);
-        hilos.put(header, maxmins);
 
         // This buffer holds the normalized data
-        double[] normalized = new double[numTrainRows];
+        double[] normalized = new double[Helper.rowCount];
         
         // Use normalization object where we can specify the denormalized
         // high and low and the normalized high and low.
@@ -213,22 +207,23 @@ abstract public class AbstractIris implements INeuralProcess {
      * @return 2D array: [A][B] where A=all rows, B=n-1 dimension array
      */
     protected double[][] normalizeIdeals(String header) { 
-        double[][] denormalized = new double[numTrainRows][];
+        double[][] denormalized = new double[Helper.rowCount][];
 
         // This is the entire column of nominal data
-        ArrayList nominals = Helper.data.get(header);
+        ArrayList nominals = Helper.rawData.get(header);
         
         // This will be "setosa," "versicolor," and "virginic" for iris data
         subtypes = Helper.getNominalSubtypes();
+        int numCols = subtypes.size();
                
         // Get the encodings for the subtype
-        for(int i=trainStart; i <= trainEnd; i++) {
+        for(int i=0; i < Helper.rowCount; i++) {
             // Translate the subtype to an number for the equilateral coding
             String nominal = (String) nominals.get(i);
             
             boolean translated = false;
             
-            for(int j=0; j < subtypes.size(); j++) {
+            for(int j=0; j < numCols; j++) {
                 String name = subtypes.get(j);
                 
                 if(nominal.equals(name)) {
@@ -252,19 +247,26 @@ abstract public class AbstractIris implements INeuralProcess {
      */
     @Override
     public void createTrainingData() {
-        assert(rowMajorInputs != null && rowMajorInputs.length != 0 && ideals != null && ideals.length != 0);
+        // Transfer a portion of the data to make the training set
         
-        // Number of cols is the header size not including the classifying variable
+        assert(allInputs != null && allInputs.length != 0);
+        assert(allIdeals != null && allIdeals.length != 0);
+
         int numCols = Helper.headers.size() - 1;
         
-        // Col-major format of the input matrix
-        inputs = new double[numTrainRows][numCols];
+        double[][] inputs = new double[numTrainRows][numCols];
         
-        // Transpose the normalized input matrix
-        for(int row=0; row < numTrainRows; row++) {
-            for(int col=0; col < numCols; col++) {
-                inputs[row][col] = rowMajorInputs[col][row];
-            }
+        for(int row=trainStart; row <= trainEnd; row++)
+            for(int col=0; col < numCols; col++)
+                inputs[row][col] = allInputs[row][col];
+        
+        assert(equilateral.encode(0).length == subtypes.size()-1);
+        numCols = equilateral.encode(0).length;
+        
+        double[][] ideals = new double[numTrainRows][numCols];
+        for(int row=trainStart; row <= trainEnd; row++) {
+            for(int col=0; col < numCols; col++)
+                ideals[row][col] = allIdeals[row][col];            
         }
         
         // Build the training set

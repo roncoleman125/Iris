@@ -254,16 +254,20 @@ abstract public class AbstractIris implements INeuralProcess {
     public void createTrainingData() {
         assert(rowMajorInputs != null && rowMajorInputs.length != 0 && ideals != null && ideals.length != 0);
         
-        // Transpose the row-major input matrix into col-major form
+        // Number of cols is the header size not including the classifying variable
         int numCols = Helper.headers.size() - 1;
+        
+        // Col-major format of the input matrix
         inputs = new double[numTrainRows][numCols];
         
+        // Transpose the normalized input matrix
         for(int row=0; row < numTrainRows; row++) {
             for(int col=0; col < numCols; col++) {
                 inputs[row][col] = rowMajorInputs[col][row];
             }
         }
         
+        // Build the training set
         trainingSet = new BasicMLDataSet(inputs, ideals);
     }
     

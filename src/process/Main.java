@@ -60,7 +60,7 @@ public class Main {
 
         // If there is no iris in the properties, use the default iris
         if (className == null) {
-            className = "iris.plugin.DefaultIris";
+            className = "process.plugin.DefaultIris";
         }
 
         Class<INeuralProcess> clazz;

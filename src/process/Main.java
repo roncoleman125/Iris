@@ -39,14 +39,19 @@ public class Main {
         // Load the processor
         INeuralProcess process = loadProcess();
         
+        // Normalize the data
         process.normalizeData();
         
+        // From the normalized data, create the training data
         process.createTrainingData();
         
+        // Build the ANN
         process.createNetwork();
         
+        // Using the training data, train the network
         process.trainNetwork();
         
+        // Using the test data, test the network
         process.testNetwork();
     }
 

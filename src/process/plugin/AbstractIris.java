@@ -26,7 +26,6 @@ import process.util.Constant;
 import static process.util.Constant.CLASSIFYING;
 import process.util.Helper;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.encog.mathutil.Equilateral;
@@ -55,12 +54,22 @@ abstract public class AbstractIris implements INeuralProcess {
         Constant.TYPE_NOMINAL,  // iris classification
     };
     
+    /** Training data start index */
     protected int trainStart = -1;
+    
+    /** Training data end index */
     protected int trainEnd = -1;
+    
+    /** Number of rows of training (input and ideal) data */
     protected int numTrainRows = -1;
     
+    /** Test data start index */
     protected int testStart = -1;
+    
+    /** Test data end index */
     protected int testEnd = -1;
+    
+    /** Number of test (input and ideal) data rows */
     protected int numTestRows = -1;
     
     // Training data set
@@ -69,22 +78,24 @@ abstract public class AbstractIris implements INeuralProcess {
     // Neural network
     protected BasicNetwork network;
  
-    // Using equilateral (as opposed to one-of-n) encoding
+    // Using equilateral (as opposed to one-of-n) normalization
     protected Equilateral equilateral = null;
     
-    // Nominal subtupes: setosa, versicolor, and virginica
+    // Nominal subtypes: for irs.csv it's setosa, versicolor, and virginica
     protected ArrayList<String> subtypes = null;
        
-    // These are the normalized inputs in col-major format. That is,
-    // the first dimension gives the row. For iris.csv, each row contains an
-    // observation together of sepal width, sepal length, petal width, and petal
-    // length.
+    // All normalized inputs: training and test
     protected double[][] allInputs = null;
     
-    // These are the normalized ideals in row-oriented form.
-    // That is, every row contains an equilateral encoding of the nominal
-    // subtype.
+    // All normalized ideals: training and test
     protected double [][] allIdeals = null;
+    
+    /**
+     * Constructor
+     */
+    public AbstractIris() {
+        this("iris","iris.csv");
+    }
     
     /**
      * Constructor
@@ -92,7 +103,7 @@ abstract public class AbstractIris implements INeuralProcess {
      * @param path File path of the CSV data
      */
     protected AbstractIris(String classifying, String path) {
-        this(classifying,path,DATA_TYPES);
+        this(classifying,path, DATA_TYPES);
     }
     
     /**
@@ -195,8 +206,10 @@ abstract public class AbstractIris implements INeuralProcess {
                 new NormalizedField(NormalizationAction.Normalize, null, max, min, 1, -1);
         
         // Normalize the data
-        for(int index=0; index < denormalized.length; index++)
+        for(int index=0; index < denormalized.length; index++) {
             normalized[index] = norm.normalize(denormalized[index]);
+            assert(normalized[index] >= -1 && normalized[index] <= 1);
+        }
 
         return normalized;
     }
@@ -207,7 +220,7 @@ abstract public class AbstractIris implements INeuralProcess {
      * @return 2D array: [A][B] where A=all rows, B=n-1 dimension array
      */
     protected double[][] normalizeIdeals(String header) { 
-        double[][] denormalized = new double[Helper.rowCount][];
+        double[][] normalized = new double[Helper.rowCount][];
 
         // This is the entire column of nominal data
         ArrayList nominals = Helper.rawData.get(header);
@@ -217,29 +230,30 @@ abstract public class AbstractIris implements INeuralProcess {
         int numCols = subtypes.size();
                
         // Get the encodings for the subtype
-        for(int i=0; i < Helper.rowCount; i++) {
-            // Translate the subtype to an number for the equilateral coding
-            String nominal = (String) nominals.get(i);
+        for(int index=0; index < Helper.rowCount; index++) {
+            // Translate the subtype to a set number for the equilateral coding
+            String nominal = (String) nominals.get(index);
             
             boolean translated = false;
             
-            for(int j=0; j < numCols; j++) {
-                String name = subtypes.get(j);
+            for(int setno=0; setno < numCols; setno++) {
+                String name = subtypes.get(setno);
                 
                 if(nominal.equals(name)) {
                     // This will be an n-1 dimensional array for n subtypes.
-                    denormalized[i] = this.equilateral.encode(j);
+                    normalized[index] = this.equilateral.encode(setno);
+                    assert(normalized[index].length == numCols - 1);
                     
                     translated = true;
                     break;
                 }
             }
             
-            // If we didn't translate the nominal, something is wrong
+            // If we didn't translate the nominal to a set number, something is wrong
             assert(translated);
         }
         
-        return denormalized;
+        return normalized;
     }
 
     /**
@@ -251,26 +265,28 @@ abstract public class AbstractIris implements INeuralProcess {
         
         assert(allInputs != null && allInputs.length != 0);
         assert(allIdeals != null && allIdeals.length != 0);
+        assert(allInputs.length == allIdeals.length);
 
         int numCols = Helper.headers.size() - 1;
         
-        double[][] inputs = new double[numTrainRows][numCols];
+        double[][] trainInputs = new double[numTrainRows][numCols];
         
         for(int row=trainStart; row <= trainEnd; row++)
             for(int col=0; col < numCols; col++)
-                inputs[row][col] = allInputs[row][col];
+                trainInputs[row][col] = allInputs[row][col];
         
-        assert(equilateral.encode(0).length == subtypes.size()-1);
+        assert(equilateral.encode(0).length == numCols);
         numCols = equilateral.encode(0).length;
         
-        double[][] ideals = new double[numTrainRows][numCols];
+        double[][] trainIdeals = new double[numTrainRows][numCols];
+        
         for(int row=trainStart; row <= trainEnd; row++) {
             for(int col=0; col < numCols; col++)
-                ideals[row][col] = allIdeals[row][col];            
+                trainIdeals[row][col] = allIdeals[row][col];            
         }
         
         // Build the training set
-        trainingSet = new BasicMLDataSet(inputs, ideals);
+        trainingSet = new BasicMLDataSet(trainInputs, trainIdeals);
     }
     
     /**
